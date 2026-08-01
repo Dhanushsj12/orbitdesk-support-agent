@@ -68,10 +68,11 @@ Category:
 """
 
     result = generator(
-        prompt,
-        max_new_tokens=10,
-        temperature=0,
-    )
+    prompt,
+    max_new_tokens=10,
+    temperature=0.1,
+    do_sample=False,
+)
 
     prediction = result[0]["generated_text"].split("Category:")[-1]
 

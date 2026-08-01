@@ -26,7 +26,7 @@ MODEL_CACHE = BASE_DIR / "models"
 
 EMBEDDING_MODEL = "sentence-transformers/all-MiniLM-L6-v2"
 
-LLM_MODEL = "microsoft/Phi-3-mini-4k-instruct"
+LLM_MODEL = "TinyLlama/TinyLlama-1.1B-Chat-v1.0"  
 
 # ===========================
 # Retrieval
