@@ -1,42 +1,53 @@
 from utils.embeddings import search
 from config import TOP_K
+from utils.logger import logger
 
 
 def retrieval_node(state):
     """
-    Retrieve relevant documents from the knowledge base
-    and resolved cases.
+    Retrieve relevant documents from the Knowledge Base
+    and Resolved Cases.
+
+    Priority:
+    1. Knowledge Base
+    2. Resolved Cases (excluding superseded)
     """
 
     question = state["question"]
+
+    logger.info("Starting Retrieval Node...")
 
     results = search(
         query=question,
         top_k=TOP_K
     )
 
-    filtered_results = []
+    knowledge_docs = []
+    resolved_cases = []
 
     for doc in results:
 
-        # Skip superseded resolved cases
-        if (
-            doc.get("type") == "resolved_case"
-            and doc.get("status") == "superseded"
-        ):
-            continue
+        # Priority 1: Knowledge Base
+        if doc["type"] == "knowledge_base":
+            knowledge_docs.append(doc)
 
-        filtered_results.append(doc)
+        # Priority 2: Resolved Cases
+        elif doc["type"] == "resolved_case":
 
-    state["retrieved_docs"] = filtered_results
+            if doc.get("status") != "superseded":
+                resolved_cases.append(doc)
+
+    final_results = knowledge_docs + resolved_cases
+
+    state["retrieved_docs"] = final_results
+
+    logger.info(f"Retrieved {len(final_results)} documents.")
 
     print("\n========== RETRIEVAL ==========")
 
-    for doc in filtered_results:
-        print(
-            f"{doc['source_id']}  ({doc['type']})"
-        )
+    for doc in final_results:
+        print(f"{doc['source_id']} ({doc['type']})")
 
-    print("===============================\n")
+    print("================================\n")
 
     return state
