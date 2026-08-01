@@ -1,6 +1,6 @@
 ﻿# 🚀 OrbitDesk AI Support Agent
 
-An intelligent **Retrieval-Augmented Generation (RAG)** support assistant that answers OrbitDesk support queries using an internal Knowledge Base and Resolved Cases. The system leverages **LangGraph**, **FAISS**, **Sentence Transformers**, and a **local Large Language Model (LLM)** to provide grounded, verifiable, and source-backed responses.
+The OrbitDesk AI Support Agent is a Retrieval-Augmented Generation (RAG) application designed to answer OrbitDesk support queries using internal documentation and resolved support cases. The system combines semantic document retrieval with a local Large Language Model (LLM) to generate accurate, source-grounded responses. It also supports query classification, answer verification, clarification requests, escalation handling, and structured JSON output.
 
 ---
 
@@ -25,7 +25,6 @@ An intelligent **Retrieval-Augmented Generation (RAG)** support assistant that a
 
 # 🏗️ System Architecture
 
-## 🏗️ System Architecture
 
 ![System Architecture](diagrams/architecturediagram.png)
 
@@ -106,7 +105,7 @@ orbitdesk-support-agent/
 ├── vector_store/
 │
 ├── diagram/
-│   └── architecture.png
+│   └── architecturediagram.png
 │
 └── screenshots/
     ├── Screenshot 1.png
@@ -335,6 +334,28 @@ API
 ✔️ Structured JSON Responses
 
 ---
+# 🤖 Model Configuration
+
+| Component | Model |
+|-----------|-------|
+| Large Language Model | TinyLlama-1.1B-Chat-v1.0 |
+| Embedding Model | sentence-transformers/all-MiniLM-L6-v2 |
+| Vector Database | FAISS (CPU) |
+| Workflow Engine | LangGraph |
+| Deep Learning Framework | PyTorch |
+
+
+# 💻 Hardware Configuration
+
+| Component | Specification |
+|-----------|---------------|
+| Laptop | Samsung Galaxy Book2 |
+| Processor | 12th Gen Intel® Core™ i5-1235U (10 Cores, 12 Threads) |
+| RAM | 16 GB |
+| Storage | SSD |
+| Graphics | Intel® Iris® Xe Graphics |
+| Operating System | Windows 11 |
+| Execution Device | CPU |
 
 # 🎯 Example Use Cases
 
@@ -348,6 +369,17 @@ The OrbitDesk AI Support Agent can assist with:
 - Resolved case retrieval
 - Safe response generation
 - Escalation recommendations
+
+# 🤝 AI Assistance Disclosure
+
+During the development of this project, AI-assisted tools (including ChatGPT) were used to:
+
+- Explain technical concepts.
+- Assist with debugging and error analysis.
+- Improve project documentation.
+- Review code structure and implementation approaches.
+
+All project design decisions, workflow implementation, testing, integration, and final validation were completed and verified by the author.
 
 ---
 
@@ -376,6 +408,17 @@ The OrbitDesk AI Support Agent can assist with:
 - Produces structured JSON responses with confidence scores and source references.
 - Modular architecture for easy extension and maintenance.
 
+
+# 📁 Repository Contents
+
+- Source Code
+- Knowledge Base Documents
+- Resolved Support Cases
+- FAISS Vector Store
+- Architecture Diagram
+- Sample Screenshots
+- README Documentation
+- Requirements File
 ---
 
 # 👨‍💻 Author
