@@ -1,0 +1,33 @@
+# Virtual Environment
+.venv/
+venv/
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Environment variables
+.env
+
+# IDE
+.vscode/
+.idea/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Local model cache (optional)
+models/cache/
+
+# FAISS generated index
+vector_store/faiss_index.bin
+vector_store/metadata.pkl
+
+# Test outputs
+outputs/
