@@ -1,148 +1,80 @@
-from models.llm import generate
 from config import MAX_RETRIES
 from utils.logger import logger
 
 
-VERIFICATION_PROMPT = """
-You are the OrbitDesk Answer Verification System.
-
-You MUST verify the generated answer ONLY using the supplied evidence.
-
-Verification Rules:
-
-1. Is the answer completely supported by the evidence?
-2. Does it avoid hallucinations?
-3. Does it avoid unsupported assumptions?
-4. Does it remain within OrbitDesk documentation?
-5. Is it safe for the user?
-
-Return ONLY one word.
-
-PASS
-
-or
-
-FAIL
-"""
-
-
 def verifier_node(state):
     """
-    Verify whether the generated answer is supported
-    by the retrieved evidence.
+    Rule-based verification.
+
+    Ensures:
+    - An answer exists
+    - At least one supporting source exists
+    - Confidence is reasonable
     """
 
     logger.info("Starting Verification Node...")
 
-    # -------------------------
-    # Rule-Based Validation
-    # -------------------------
-
-    if len(state.get("sources", [])) == 0:
-
-        logger.warning("No sources found.")
-
-        state["verified"] = False
-        state["reason"] = "No supporting sources."
-
-        return state
-
-    if state.get("answer", "").strip() == "":
+    # -----------------------------
+    # No answer
+    # -----------------------------
+    if not state.get("answer", "").strip():
 
         logger.warning("Generated answer is empty.")
 
         state["verified"] = False
-        state["reason"] = "Empty answer."
-
-        return state
-
-    # -------------------------
-    # Build Evidence
-    # -------------------------
-
-    evidence = ""
-
-    for doc in state["retrieved_docs"]:
-
-        evidence += f"""
-
-Source:
-{doc['source_id']}
-
-Content:
-{doc['content']}
-
-"""
-
-    prompt = f"""
-{VERIFICATION_PROMPT}
-
-Evidence:
-
-{evidence}
-
-Generated Answer:
-
-{state['answer']}
-
-Verification:
-"""
-
-    result = generate(prompt, 10)
-
-    result = result.upper()
-
-    # -------------------------
-    # PASS
-    # -------------------------
-
-    if "PASS" in result:
-
-        logger.info("Verification Passed.")
-
-        state["verified"] = True
-        state["reason"] = "Answer verified."
-
-        return state
-
-    # -------------------------
-    # FAIL
-    # -------------------------
-
-    logger.warning("Verification Failed.")
-
-    retries = state.get("retry_count", 0)
-
-    if retries < MAX_RETRIES:
-
-        state["retry_count"] = retries + 1
-
-        state["verified"] = False
-
-        state["reason"] = "Retry generation."
-
-        logger.info(
-            f"Retry Count : {state['retry_count']}"
-        )
-
-    else:
-
-        state["verified"] = False
-
+        state["reason"] = "Generated answer is empty."
         state["requires_human"] = True
 
-        state["classification"] = "safe_failure"
+        return state
 
-        state["answer"] = (
-            "I cannot answer confidently using the available documentation."
-        )
+    # -----------------------------
+    # No sources
+    # -----------------------------
+    if len(state.get("sources", [])) == 0:
 
-        state["reason"] = (
-            "Verification failed after retry."
-        )
+        logger.warning("No supporting sources.")
 
-        logger.error(
-            "Verification failed after maximum retries."
-        )
+        state["verified"] = False
+        state["reason"] = "No supporting sources."
+        state["requires_human"] = True
+
+        return state
+
+    # -----------------------------
+    # Confidence too low
+    # -----------------------------
+    if state.get("confidence", 0.0) < 0.3:
+
+        logger.warning("Confidence too low.")
+
+        retries = state.get("retry_count", 0)
+
+        if retries < MAX_RETRIES:
+
+            state["retry_count"] = retries + 1
+
+            state["verified"] = False
+
+            state["reason"] = "Retry generation."
+
+            logger.info(
+                f"Retry Count: {state['retry_count']}"
+            )
+
+            return state
+
+        state["verified"] = False
+        state["requires_human"] = True
+        state["reason"] = "Low confidence after retries."
+
+        return state
+
+    # -----------------------------
+    # Verification Passed
+    # -----------------------------
+    logger.info("Verification Passed.")
+
+    state["verified"] = True
+    state["reason"] = "Answer verified."
 
     return state

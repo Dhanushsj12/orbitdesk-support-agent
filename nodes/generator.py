@@ -3,46 +3,46 @@ from utils.logger import logger
 
 
 GENERATION_PROMPT = """
-You are OrbitDesk Support Assistant.
+You are an OrbitDesk support agent.
 
-You MUST follow these rules:
+You are provided with internal OrbitDesk documentation.
 
-1. Answer ONLY using the supplied evidence.
+Follow these rules exactly:
+
+1. Answer ONLY from the supplied documentation.
 2. Never use outside knowledge.
-3. Never hallucinate.
-4. If the evidence is insufficient, say:
-   "I cannot answer confidently using the available documentation."
-5. Mention the source IDs used.
-6. Keep the answer clear and concise.
+3. Never invent information.
+4. Never say:
+   - "I do not have access to the documentation."
+   - "According to the provided evidence."
+   - "As an AI..."
+   - "Based on the context..."
+5. If the answer cannot be found, reply exactly:
+I cannot answer confidently using the available documentation.
+6. Answer in 1-3 concise sentences.
+7. Do NOT explain your reasoning.
+8. Do NOT include "Sources:" in the answer.
+9. Return ONLY the final answer.
 """
 
 
 def generator_node(state):
-    """
-    Generate an answer using the retrieved documents.
-    """
 
     logger.info("Starting Generator Node...")
 
     question = state["question"]
-
     docs = state["retrieved_docs"]
 
     evidence = ""
-
     sources = []
 
-    for doc in docs:
+    # Use top 2 retrieved documents
+    for doc in docs[:2]:
 
         evidence += f"""
+Source ID: {doc['source_id']}
 
-=========================
-Source ID:
-{doc['source_id']}
-
-Content:
-{doc['content']}
-=========================
+{doc['content'][:700]}
 
 """
 
@@ -55,34 +55,49 @@ Content:
 {GENERATION_PROMPT}
 
 Question:
-
 {question}
 
-Evidence:
-
+Documentation:
 {evidence}
 
 Final Answer:
 """
 
-    answer = generate(prompt)
+    answer = generate(prompt).strip()
 
-    # Simple confidence calculation
-    confidence = min(
-        1.0,
-        len(docs) * 0.30
-    )
+    # -------------------------
+    # Cleanup
+    # -------------------------
 
-    state["answer"] = answer.strip()
+    unwanted = [
+        "I do not have access to the OrbitDesk documentation.",
+        "I do not have access to the documentation.",
+        "According to the provided evidence,",
+        "according to the provided evidence,",
+        "Based on the provided evidence,",
+        "based on the provided evidence,",
+        "Based on the documentation,",
+        "based on the documentation,",
+        "However,",
+        "Answer:",
+        "Sources:"
+    ]
 
+    for phrase in unwanted:
+        answer = answer.replace(phrase, "")
+
+    answer = " ".join(answer.split())
+
+    confidence = round(min(1.0, len(sources) * 0.45), 2)
+
+    state["answer"] = answer
     state["sources"] = sources
-
-    state["confidence"] = round(confidence, 2)
+    state["confidence"] = confidence
 
     logger.info("Answer Generated Successfully.")
 
     print("\n========== GENERATOR ==========")
-    print(state["answer"])
+    print(answer)
     print("================================\n")
 
     return state

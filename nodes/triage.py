@@ -1,97 +1,110 @@
-from transformers import (
-    AutoTokenizer,
-    AutoModelForCausalLM,
-    pipeline,
-)
+from utils.logger import logger
 
-from config import LLM_MODEL
-
-
-# -----------------------------
-# Load Local LLM
-# -----------------------------
-
-tokenizer = AutoTokenizer.from_pretrained(LLM_MODEL)
-
-model = AutoModelForCausalLM.from_pretrained(
-    LLM_MODEL,
-    device_map="auto",
-)
-
-generator = pipeline(
-    "text-generation",
-    model=model,
-    tokenizer=tokenizer,
-)
-
-
-# -----------------------------
-# Prompt
-# -----------------------------
-
-TRIAGE_PROMPT = """
-You are an OrbitDesk support classifier.
-
-Choose ONLY one category.
-
-1. answerable
-2. requires_clarification
-3. requires_escalation
-4. out_of_scope
-
-Rules
-
-- If documentation can answer -> answerable
-- If information is missing -> requires_clarification
-- If user already performed documented troubleshooting and escalation is required -> requires_escalation
-- Refunds, legal advice, billing actions or unrelated questions -> out_of_scope
-
-Return ONLY the category.
-"""
-
-
-# -----------------------------
-# Triage Node
-# -----------------------------
 
 def triage_node(state):
+    """
+    Rule-based triage node.
 
-    question = state["question"]
+    Classifications:
+    - answerable
+    - requires_clarification
+    - requires_escalation
+    - out_of_scope
+    """
 
-    prompt = f"""
-{TRIAGE_PROMPT}
+    logger.info("Starting Triage Node...")
 
-Question:
-{question}
+    question = state["question"].lower().strip()
 
-Category:
-"""
+    # -----------------------------------------
+    # Out of Scope
+    # -----------------------------------------
+    if any(word in question for word in [
+        "refund",
+        "billing",
+        "cancel subscription",
+        "payment"
+    ]):
 
-    result = generator(
-    prompt,
-    max_new_tokens=10,
-    temperature=0.1,
-    do_sample=False,
-)
+        state["classification"] = "out_of_scope"
 
-    prediction = result[0]["generated_text"].split("Category:")[-1]
+        state["answer"] = (
+            "This request is outside the scope of the OrbitDesk documentation. "
+            "Please contact the appropriate billing or support team."
+        )
 
-    prediction = prediction.strip().lower()
+        state["confidence"] = 1.0
 
-    valid = [
-        "answerable",
-        "requires_clarification",
-        "requires_escalation",
-        "out_of_scope",
-    ]
+        state["verified"] = True
 
-    classification = "requires_clarification"
+        state["requires_human"] = False
 
-    for item in valid:
-        if item in prediction:
-            classification = item
-            break
+        state["reason"] = "Out of scope."
 
-    state["classification"] = classification
+        logger.info(f"Classification: {state['classification']}")
 
-    return state
+        return state
+
+    # -----------------------------------------
+    # Requires Clarification
+    # -----------------------------------------
+    elif len(question) < 15:
+
+        state["classification"] = "requires_clarification"
+
+        state["answer"] = (
+            "Could you please provide more details so I can better assist you?"
+        )
+
+        state["confidence"] = 1.0
+
+        state["verified"] = True
+
+        state["requires_human"] = False
+
+        state["reason"] = "More information required."
+
+        logger.info(f"Classification: {state['classification']}")
+
+        return state
+
+    # -----------------------------------------
+    # Requires Escalation
+    # -----------------------------------------
+    elif any(word in question for word in [
+        "still fails",
+        "already tried",
+        "followed every",
+        "doesn't work",
+        "not working"
+    ]):
+
+        state["classification"] = "requires_escalation"
+
+        state["answer"] = (
+            "Based on your description, you have already completed the documented troubleshooting steps. "
+            "This issue requires escalation to the OrbitDesk support team for further investigation."
+        )
+
+        state["confidence"] = 1.0
+
+        state["verified"] = True
+
+        state["requires_human"] = True
+
+        state["reason"] = "Escalation required."
+
+        logger.info(f"Classification: {state['classification']}")
+
+        return state
+
+    # -----------------------------------------
+    # Answerable
+    # -----------------------------------------
+    else:
+
+        state["classification"] = "answerable"
+
+        logger.info(f"Classification: {state['classification']}")
+
+        return state

@@ -1,3 +1,5 @@
+import json
+
 from graph import graph
 
 
@@ -39,29 +41,27 @@ def main():
 
     result = graph.invoke(initial_state)
 
+    response = {
+        "classification": result.get("classification"),
+        "answer": result.get("answer"),
+        "confidence": result.get("confidence"),
+        "verified": result.get("verified"),
+        "requires_human": result.get("requires_human"),
+        "reason": result.get("reason"),
+        "sources": [
+            {
+                "source_id": source["source_id"],
+                "type": source["type"]
+            }
+            for source in result.get("sources", [])
+        ]
+    }
+
     print("\n" + "=" * 60)
     print("FINAL RESPONSE")
     print("=" * 60)
 
-    print("\nAnswer:")
-    print(result["answer"])
-
-    print("\nConfidence:")
-    print(result["confidence"])
-
-    print("\nVerified:")
-    print(result["verified"])
-
-    print("\nClassification:")
-    print(result["classification"])
-
-    print("\nSources:")
-
-    for source in result["sources"]:
-
-        print(
-            f"- {source['source_id']} ({source['type']})"
-        )
+    print(json.dumps(response, indent=4))
 
 
 if __name__ == "__main__":

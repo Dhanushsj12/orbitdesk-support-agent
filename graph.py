@@ -1,6 +1,7 @@
 from langgraph.graph import StateGraph, END
 
 from state import AgentState
+from config import MAX_RETRIES
 
 from nodes.triage import triage_node
 from nodes.retrieval import retrieval_node
@@ -9,31 +10,44 @@ from nodes.verifier import verifier_node
 
 
 # -----------------------------------------
-# Routing after Triage
+# Route after Triage
 # -----------------------------------------
 
 def triage_router(state):
+    """
+    Route only answerable questions to retrieval.
+    All other classifications end the workflow.
+    """
 
-    classification = state["classification"]
-
-    if classification == "answerable":
+    if state["classification"] == "answerable":
         return "retrieval"
 
     return END
 
 
 # -----------------------------------------
-# Routing after Verification
+# Route after Verification
 # -----------------------------------------
 
 def verification_router(state):
+    """
+    Decide whether to retry generation
+    or finish the workflow.
+    """
 
-    if state["verified"]:
+    # Verification successful
+    if state.get("verified", False):
         return END
 
-    if state.get("retry_count", 0) > 0:
+    # Stop if human intervention is required
+    if state.get("requires_human", False):
+        return END
+
+    # Retry if retries remain
+    if state.get("retry_count", 0) < MAX_RETRIES:
         return "generator"
 
+    # Otherwise stop
     return END
 
 
@@ -43,17 +57,18 @@ def verification_router(state):
 
 builder = StateGraph(AgentState)
 
+# Nodes
 builder.add_node("triage", triage_node)
-
 builder.add_node("retrieval", retrieval_node)
-
 builder.add_node("generator", generator_node)
-
 builder.add_node("verifier", verifier_node)
 
-
+# Entry Point
 builder.set_entry_point("triage")
 
+# -----------------------------------------
+# Triage Routing
+# -----------------------------------------
 
 builder.add_conditional_edges(
     "triage",
@@ -64,17 +79,16 @@ builder.add_conditional_edges(
     },
 )
 
+# -----------------------------------------
+# Main Workflow
+# -----------------------------------------
 
-builder.add_edge(
-    "retrieval",
-    "generator"
-)
+builder.add_edge("retrieval", "generator")
+builder.add_edge("generator", "verifier")
 
-builder.add_edge(
-    "generator",
-    "verifier"
-)
-
+# -----------------------------------------
+# Verification Routing
+# -----------------------------------------
 
 builder.add_conditional_edges(
     "verifier",
@@ -85,5 +99,8 @@ builder.add_conditional_edges(
     },
 )
 
+# -----------------------------------------
+# Compile Graph
+# -----------------------------------------
 
 graph = builder.compile()

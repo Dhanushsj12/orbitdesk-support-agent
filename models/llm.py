@@ -1,5 +1,10 @@
-from transformers import AutoTokenizer, AutoModelForCausalLM, pipeline
-from config import LLM_MODEL, TEMPERATURE, MAX_NEW_TOKENS
+import torch
+from transformers import AutoTokenizer, AutoModelForCausalLM
+
+from config import (
+    LLM_MODEL,
+    MAX_NEW_TOKENS,
+)
 
 print("Loading Local LLM...")
 
@@ -10,17 +15,36 @@ model = AutoModelForCausalLM.from_pretrained(
     device_map="auto"
 )
 
-llm = pipeline(
-    "text-generation",
-    model=model,
-    tokenizer=tokenizer
-)
+model.eval()
+
 
 def generate(prompt, max_tokens=MAX_NEW_TOKENS):
-    response = llm(
+
+    inputs = tokenizer(
         prompt,
-        max_new_tokens=max_tokens,
-        temperature=TEMPERATURE,
-        do_sample=False
+        return_tensors="pt",
+        truncation=True,
+        max_length=1800
     )
-    return response[0]["generated_text"]
+
+    # Move tensors to the model device
+    inputs = {k: v.to(model.device) for k, v in inputs.items()}
+
+    with torch.no_grad():
+
+        outputs = model.generate(
+            **inputs,
+            max_new_tokens=max_tokens,
+            do_sample=False,
+            pad_token_id=tokenizer.eos_token_id,
+            eos_token_id=tokenizer.eos_token_id,
+        )
+
+    generated = outputs[0][inputs["input_ids"].shape[1]:]
+
+    answer = tokenizer.decode(
+        generated,
+        skip_special_tokens=True
+    )
+
+    return answer.strip()
