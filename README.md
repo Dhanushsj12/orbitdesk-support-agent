@@ -193,6 +193,16 @@ The application returns:
 | Purpose | Semantic Retrieval |
 
 ---
+## AI Coding Assistant Disclosure
+
+This project was developed with assistance from ChatGPT (OpenAI) for:
+- Brainstorming the project architecture
+- Debugging Python code
+- Improving documentation
+- Explaining implementation concepts
+
+All code was reviewed, modified, integrated, and tested by the author. The final design decisions, implementation, and validation are my own.
+---
 
 # 📂 Project Structure
 
