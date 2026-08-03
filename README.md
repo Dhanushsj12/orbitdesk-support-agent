@@ -678,21 +678,28 @@ Possible future improvements include:
 
 ---
 
+## 🎥 Project Demonstration
+
+**Video Walkthrough:**  
+https://drive.google.com/file/d/11ISA15G7pOJnnbTSp-5B5bBD1WjeXnTU/view?usp=drivesdk
+
+---
+
 # 👨‍💻 Author
 
 ## Dhanush S J
 
-Integrated M.Tech – Software Engineering
-
+**Integrated M.Tech in Software Engineering**  
 Vellore Institute of Technology (VIT)
 
-**GitHub**
-
+**GitHub:**  
 https://github.com/Dhanushsj12
 
-**LinkedIn**
-
+**LinkedIn:**  
 https://www.linkedin.com/in/dhanush-s-j-034147271
+
+**Email:**  
+dhanushsj2004@gmail.com
 
 ---
 
